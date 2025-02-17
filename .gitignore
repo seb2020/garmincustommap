@@ -1,0 +1,6 @@
+mapnik/tools/saddledirection
+garmin/data/*
+garmin/out/*
+garmin/tools/mkgmap*
+garmin/tools/splitter*
+*.exe
