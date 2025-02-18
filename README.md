@@ -1,8 +1,13 @@
 # README
 
-Update of existing scripts for creating Garmin map.
+Update of various existing scripts for creating Garmin map.
 
 Currently in testing phase and work fine for Switzerland
+
+Split DEM to OSM : ~10m
+Create map countours : ~5m
+Slit country : ~2m
+Generate map : ~4m
 
 ## Scripts
 

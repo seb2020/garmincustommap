@@ -1,0 +1,22 @@
+copyright-message=OpenStreetMap contributors, OpenTopoMap CC-BY-NC-SA 4.0
+max-jobs
+gmapsupp
+latin1
+lower-case
+index
+split-name-index
+remove-ovm-work-files
+preserve-element-order
+housenumbers
+route
+make-opposite-cycleways
+add-pois-to-areas
+add-pois-to-lines
+report-roundabout-issues
+report-roundabout-issues=flares
+link-pois-to-ways
+process-destination
+process-exits
+order-by-decreasing-area
+road-name-pois
+drive-on=detect,right

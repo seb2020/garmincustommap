@@ -3,23 +3,16 @@ product-id: 1
 product-version: 100
 draw-priority: 20
 copyright-message=OpenStreetMap contributors, OpenTopoMap CC-BY-NC-SA 4.0
-# family-name="familyname"
-# series-name="seriesname"
-# area-name="areaname"
-# country-name="countryname"
-# country-abbr"ca"
-# overview-mapname: 53530000
 max-jobs
 gmapsupp
 hide-gmapsupp-on-pc
-# gmapi
+gmapi
 latin1
 lower-case
 index
 split-name-index
 remove-ovm-work-files
 preserve-element-order
-split-name-index
 housenumbers
 drive-on=detect,right
 #The following files are defined in the main script
@@ -36,8 +29,10 @@ route
 make-opposite-cycleways
 add-pois-to-areas
 add-pois-to-lines
-check-roundabouts
-check-roundabout-flares
+#check-roundabouts
+report-roundabout-issues
+#check-roundabout-flares
+report-roundabout-issues=flares
 link-pois-to-ways
 process-destination
 process-exits

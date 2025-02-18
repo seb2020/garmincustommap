@@ -20,11 +20,12 @@ SPLITTER_OUTPUT_DIR="$(pwd)/out/splitter_out"
 DEM_FILE="$(pwd)/data/dem"
 DEM_OSM_FILE="$(pwd)/data/dem-osm"
 MAPDATE="$(date +'%d%m%Y_%H%M%S')"
+MAPDATE_CONTOURS="$(date +'%d%m%Y')"
 CONTINENT="europe"
 COUNTRY="switzerland"
 COUNTRYNAME_SHORT="CH"
-GMAPI_ENABLED=false # Enable if you want to create map for Gamine BaseCamp
-CONTOURS_ENABLED=false # Enable if you want to add contours to the map
+GMAPI_ENABLED=true # Enable if you want to create map for Gamine BaseCamp
+CONTOURS_ENABLED=true # Enable if you want to merge the contour and the map in a single file
 
 #STYLE OpenTopoMap
 STYLEFILE="$(pwd)/style/opentopomap/"
@@ -34,7 +35,7 @@ TYPFILE="$(pwd)/style/typ/opentopomap.typ"
 # STYLEFILE="$(pwd)/style/rando/"
 # TYPFILE="$(pwd)/style/typ/rando.typ"
 
-#STYLE Contours
+#STYLE only for contours
 STYLEFILE_CONTOURS="$(pwd)/style/contours/"
 TYPFILE_CONTOURS="$(pwd)/style/typ/contours.typ"
 
@@ -121,7 +122,13 @@ function generateContours {
     java $JAVAOPTS -jar $MKGMAPJAR -c $OPTIONS \
         --output-dir=$MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_contours \
         --style-file=$STYLEFILE_CONTOURS \
+        --description="GarminCustomMap_${COUNTRYNAME_SHORT}_Contours_${MAPDATE_CONTOURS}" \
+        --area-name="GarminCustomMap_${COUNTRYNAME_SHORT}_Contours_${MAPDATE_CONTOURS}" \
+        --overview-mapname="GarminCustomMap_${COUNTRYNAME_SHORT}_Contours_${MAPDATE_CONTOURS}"  \
+        --series-name="GarminCustomMap_${COUNTRYNAME_SHORT}_Contours_${MAPDATE_CONTOURS}" \
         $DATA_DEM $TYPFILE_CONTOURS &> $MKGMAP_OUTPUT_DIR/mkgmap-$CONTINENT-$COUNTRY-countours.log
+
+    mv $MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_contours/gmapsupp.img $MKGMAP_OUTPUT_DIR/GarminCustomMap_${COUNTRYNAME_SHORT}_Contours_${MAPDATE_CONTOURS}.img
 
     logger "######## End of the map courbes ...."
 
@@ -151,7 +158,7 @@ function generateMap {
         DATA="$DATA $file"
     done
 
-    OPTIONS="$(pwd)/opentopomap_options"
+    OPTIONS="$(pwd)/map_options"
    
     if [[ "$GMAPI_ENABLED" = true ]]; then
         GMAPI="--gmapi"
@@ -159,28 +166,67 @@ function generateMap {
         GMAPI=""
     fi
 
-    if [[ "$CONTOURS_ENABLED" = true ]]; then
-        CONTOURS="$MKGMAP_OUTPUT_DIR/${CONTINENT}/${COUNTRY}_contours/gmapsupp.img"
-    else
-        CONTOURS=""
-    fi
-
     java $JAVAOPTS -jar $MKGMAPJAR -c $OPTIONS \
         --style-file=$STYLEFILE \
         --precomp-sea=$SEA_DIRECTORY \
         --output-dir=$MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY \
         --bounds=$BOUNDS_DIRECTORY \
-        --description="OpenTopoMap_${COUNTRYNAME_SHORT}_${MAPDATE}" \
-        --area-name="OpenTopoMap_${COUNTRYNAME_SHORT}_${MAPDATE}" \
-        --overview-mapname="OpenTopoMap_${COUNTRYNAME_SHORT}_${MAPDATE}"  \
-        --family-name="OpenTopoMap_${COUNTRYNAME_SHORT}_${MAPDATE}" \
+        --description="GarminCustomMap_${COUNTRYNAME_SHORT}_${MAPDATE}" \
+        --area-name="GarminCustomMap_${COUNTRYNAME_SHORT}_${MAPDATE}" \
+        --overview-mapname="GarminCustomMap_${COUNTRYNAME_SHORT}_${MAPDATE}"  \
+        --family-name="GarminCustomMap_${COUNTRYNAME_SHORT}_${MAPDATE}" \
         --family-id="$FAMILY_ID" \
-        --series-name="OpenTopoMap_${COUNTRYNAME_SHORT}_${MAPDATE}" \
+        --series-name="GarminCustomMap_${COUNTRYNAME_SHORT}_${MAPDATE}" \
         $GMAPI \
         --dem=$DEM_FILE \
-        $DATA $TYPFILE $CONTOURS &> $MKGMAP_OUTPUT_DIR/mkgmap-$CONTINENT-$COUNTRY.log
+        $DATA $TYPFILE &> $MKGMAP_OUTPUT_DIR/mkgmap-$CONTINENT-$COUNTRY.log
+    
+    mv $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/gmapsupp.img $MKGMAP_OUTPUT_DIR/GarminCustomMap_${COUNTRYNAME_SHORT}_${MAPDATE}.img
 
-    logger "######## End of of the map $COUNTRY in continent $CONTINENT... with MAPDATE $MAPDATE ...."
+    logger "######## End of the map $COUNTRY in continent $CONTINENT... with MAPDATE $MAPDATE ...."
+
+}
+
+# This function merge a map and a contour map for Garmin devices.
+function mergeContoursAndMap {
+
+    logger "######## Merge of the map $COUNTRY in continent $CONTINENT with contours... with MAPDATE $MAPDATE ...."
+ 
+    if [[ "$CONTOURS_ENABLED" = true ]]; then
+
+        for file in $SPLITTER_OUTPUT_DIR/$CONTINENT/$COUNTRY/*.o5m; do
+            DATA="$DATA $file"
+        done
+
+        OPTIONS="$(pwd)/map_options"
+    
+        if [[ "$GMAPI_ENABLED" = true ]]; then
+            GMAPI="--gmapi"
+        else
+            GMAPI=""
+        fi
+
+        CONTOURS="$MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_contours/${MAPID_CONTOURS:0:1}*.img"
+
+        java $JAVAOPTS -jar $MKGMAPJAR -c $OPTIONS \
+            --style-file=$STYLEFILE \
+            --precomp-sea=$SEA_DIRECTORY \
+            --output-dir=$MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY \
+            --bounds=$BOUNDS_DIRECTORY \
+            --description="GarminCustomMap_${COUNTRYNAME_SHORT}_${MAPDATE}" \
+            --area-name="GarminCustomMap_${COUNTRYNAME_SHORT}_${MAPDATE}" \
+            --overview-mapname="GarminCustomMap_${COUNTRYNAME_SHORT}_${MAPDATE}"  \
+            --family-name="GarminCustomMap_${COUNTRYNAME_SHORT}_${MAPDATE}" \
+            --family-id="$FAMILY_ID" \
+            --series-name="GarminCustomMap_${COUNTRYNAME_SHORT}_${MAPDATE}" \
+            $GMAPI \
+            --dem=$DEM_FILE \
+            $DATA $TYPFILE $CONTOURS &> $MKGMAP_OUTPUT_DIR/mkgmap-$CONTINENT-$COUNTRY.log
+        
+        mv $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/gmapsupp.img $MKGMAP_OUTPUT_DIR/GarminCustomMapWithContours_${COUNTRYNAME_SHORT}_${MAPDATE}.img
+
+        logger "######## End of merge map $COUNTRY in continent $CONTINENT... with MAPDATE $MAPDATE ...."
+    fi
 
 }
 
@@ -189,14 +235,16 @@ function cleanUp {
 
     logger "######## Clean up unnecessary files ...."
 
-    rm $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/53*.img $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/53*.tdb 
-    rm $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/ovm*.img $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/*.typ 
-    rm $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/OpenTopoMap_${COUNTRYNAME_SHORT}_${MAPDATE}.img 
-    rm $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/OpenTopoMap_${COUNTRYNAME_SHORT}_${MAPDATE}_mdr.img 
-    rm $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/OpenTopoMap_${COUNTRYNAME_SHORT}_${MAPDATE}.mdx 
-    rm $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/OpenTopoMap_${COUNTRYNAME_SHORT}_${MAPDATE}.tdb
+    # rm $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/53*.img 
+    # rm $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/53*.tdb 
+    # rm $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/ovm*.img 
+    # rm $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/*.typ 
+    # rm $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/GarminCustomMap_${COUNTRYNAME_SHORT}_${MAPDATE}.img 
+    # rm $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/GarminCustomMap_${COUNTRYNAME_SHORT}_${MAPDATE}_mdr.img 
+    # rm $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/GarminCustomMap_${COUNTRYNAME_SHORT}_${MAPDATE}.mdx 
+    # rm $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/GarminCustomMap_${COUNTRYNAME_SHORT}_${MAPDATE}.tdb
 
-    mv $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/gmapsupp.img $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/OpenTopoMap_${COUNTRYNAME_SHORT}_${MAPDATE}.img
+    
 
     logger "######## End of clean up unnecessary files ...."
 }
@@ -213,8 +261,9 @@ logger "FAMILY_ID is $FAMILY_ID"
 logger "MAPID is $MAPID"
 logger "MAPID_CONTOURS is $MAPID_CONTOURS"
 
-splitDEMToOSM
-# generateContours
-# splitCountry
-# generateMap
-# cleanUp
+#splitDEMToOSM
+#generateContours
+#splitCountry
+#generateMap
+mergeContoursAndMap
+#cleanUp
