@@ -4,3 +4,4 @@ garmin/out/*
 garmin/tools/mkgmap*
 garmin/tools/splitter*
 *.exe
+.venv/
