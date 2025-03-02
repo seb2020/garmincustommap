@@ -12,7 +12,7 @@ id=([africa]=0 [asia]=1 [australia-oceania]=2 [central-america]=3 [europe]=4 [no
 
 
 ### SPECIFIC VARS
-JAVAOPTS="-Xmx24576m" # adjust to your system
+JAVAOPTS="-Xmx24g" # adjust to your system
 MKGMAP="mkgmap-r4923" # adjust to latest version (see www.mkgmap.org.uk)
 SPLITTER="splitter-r654" # adjust to latest version (see www.mkgmap.org.uk)
 BASEPATH=/mnt/c/Users/sebastien/Downloads/garmincustommap/garmin
@@ -308,7 +308,7 @@ function cleanUp {
 init
 
 FAMILY_ID=$(( 53000+${id[$CONTINENT]}*100 ))
-MAPID=$(( $FAMILY_ID*1000+1 ))
+MAPID=$(( $FAMILY_ID*1000+2 ))
 MAPID_CONTOURS=$(( $MAPID+5000 ))
 
 logger "FAMILY_ID is $FAMILY_ID"
@@ -317,8 +317,8 @@ logger "MAPID_CONTOURS is $MAPID_CONTOURS"
 
 # Do only 1x or if you change for a new country !
 # hgtToPBF
-#splitDEMToOSM
-generateContours
+# splitDEMToOSM
+# generateContours
 
 # Do every time
 splitCountry
