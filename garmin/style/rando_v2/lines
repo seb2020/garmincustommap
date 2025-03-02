@@ -6,16 +6,21 @@ tracktype ~ 'grade[3-4]' | smoothness ~ '(intermediate|bad|very_bad)'  { add c_s
 
 # 0x10f01
 ##sentiers GR
-highway=* & c_route_gr=yes {name '${GR}'} [0x10f01 resolution 20 continue]
+#highway=* & c_route_gr=yes {name '${GR}'} [0x10f01 resolution 20 continue]
 ## sentiers GRP
-highway=* & c_route_grp=yes {name '${GRP}'} [0x10f01 resolution 20 continue]
+#highway=* & c_route_grp=yes {name '${GRP}'} [0x10f01 resolution 20 continue]
 ## sentiers balises (PR)
-highway=* & c_route_pr=yes & (c_route_gr =no | c_route_gr!=*) & (c_route_grp =no | c_route_grp!=*) [0x10f02 resolution 22 continue]
+#highway=* & c_route_pr=yes & (c_route_gr =no | c_route_gr!=*) & (c_route_grp =no | c_route_grp!=*) [0x10f02 resolution 22 continue]
 ## sentiers balises 
-highway=* & ( c_route_hiking=yes | trailblazed=yes ) & (c_route_gr =no | c_route_gr!=*) & (c_route_grp =no | c_route_grp!=*) [0x10f02 resolution 22 continue]
+#highway=* & ( c_route_hiking=yes | trailblazed=yes ) & (c_route_gr =no | c_route_gr!=*) & (c_route_grp =no | c_route_grp!=*) [0x10f02 resolution 22 continue]
 
 # 0x10f04 sentiers balises VTT
-highway=* & c_route_mtb=yes & (c_route_hiking=no | c_route_hiking!=*) [0x10f04 resolution 22 continue]
+#highway=* & c_route_mtb=yes & (c_route_hiking=no | c_route_hiking!=*) [0x10f04 resolution 22 continue]
+
+## CUSTOM
+
+# Assign the street name for house number search
+highway=* & name=* { set mkgmap:street='${name}' }
 
 # 0x0d
 highway=* & tunnel=yes & length()>20 [0x0d resolution 24]
@@ -223,4 +228,30 @@ highway=via_ferrata [0x10f14 resolution 24]
 #0x10f18
 natural=cliff [0x10f18 resolution 23]
 
+# custom
 
+natural=wood | landuse=forest [0x11002  resolution 24 continue]
+
+# The following boundary styles are after the highway rules because ways
+# are frequently tagged with both and we want the highway to take priority.
+boundary=administrative { name '${mkgmap:boundary_name}' }
+boundary=administrative & admin_level<3 [0x1e resolution 12]
+boundary=administrative & admin_level<5 [0x1d resolution 19]
+boundary=administrative & admin_level<7 [0x1c resolution 21]
+boundary=administrative & admin_level<9 [0x1c resolution 22]
+boundary=administrative [0x1c resolution 22]
+boundary=national [0x1e resolution 17]
+boundary=political [0x1c resolution 19]
+
+<finalize>
+
+include 'inc/address';
+# calculate the road speed based on maxspeed tag
+include 'inc/roadspeed'; 
+
+name=* { name '${name}' }
+
+highway=* & ref=* { addlabel '${ref}' }
+highway=* & int_ref=* { addlabel '${int_ref}' }
+highway=* & nat_ref=* { addlabel '${nat_ref}' }
+highway=* & reg_ref=* { addlabel '${reg_ref}' }

@@ -24,22 +24,23 @@ MAPDATE="$(date +'%d%m%Y_%H%M%S')"
 MAPDATE_CONTOURS="$(date +'%d%m%Y')"
 CONTINENT="europe"
 COUNTRY="switzerland"
+COUNTRY_SUBZONE="franche-comte"
 COUNTRYNAME_SHORT="CH"
 GMAPI_ENABLED=true # Enable if you want to create map for Gamin BaseCamp
 CONTOURS_ENABLED=true # Enable if you want to merge the contour and the map in a single file
 GMAPI_CONTOURS_ENABLED=true # Enable if you want to create map for Gamin BaseCamp for the countour map
 
 #STYLE OpenTopoMap
-STYLEFILE="$BASEPATH/style/opentopomap/"
-TYPFILE="$BASEPATH/style/typ/opentopomap.typ"
+# STYLEFILE="$BASEPATH/style/opentopomap/"
+# TYPFILE="$BASEPATH/style/typ/opentopomap.typ"
 
 #STYLE Rando
-# STYLEFILE="$BASEPATH/style/rando/"
-# TYPFILE="$BASEPATH/style/typ/rando.typ"
+STYLEFILE="$BASEPATH/style/rando_v2/"
+TYPFILE="$BASEPATH/style/typ/rando_v2.typ"
 
-#STYLE only for contours
-STYLEFILE_CONTOURS="$BASEPATH/style/contours/"
-TYPFILE_CONTOURS="$BASEPATH/style/typ/contours.typ"
+#STYLE Rando for contours
+STYLEFILE_CONTOURS="$BASEPATH/style/rando_v2/"
+TYPFILE_CONTOURS="$BASEPATH/style/typ/rando_v2.typ"
 
 # Generate a bash function for creating a logger with timestamp that takes input from function parameters
 function logger {
@@ -51,8 +52,8 @@ function logger {
 function init {
     logger "######## Init required files ...."
 
-    mkdir -P $BASEPATH/tools
-    mkdir -P $BASEPATH/data
+    mkdir -p $BASEPATH/tools
+    mkdir -p $BASEPATH/data
     mkdir -p $MKGMAP_OUTPUT_DIR
     mkdir -p $SPLITTER_OUTPUT_DIR
     mkdir -p $DEM_FILE
@@ -88,11 +89,13 @@ function init {
     fi
     SEA_DIRECTORY="$BASEPATH/data/sea"
 
-    rm -f "$BASEPATH/data/${CONTINENT}/${COUNTRY}-latest.osm.pbf"
-    wget "https://download.geofabrik.de/${CONTINENT}/${COUNTRY}-latest.osm.pbf" -P "$BASEPATH/data/${CONTINENT}"
 
-    rm -f "$BASEPATH/data/${CONTINENT}/${COUNTRY}.poly"
-    wget "https://download.geofabrik.de/${CONTINENT}/${COUNTRY}.poly" -P "$BASEPATH/data/${CONTINENT}"
+    # rm -f "$BASEPATH/data/${CONTINENT}/${COUNTRY}/${COUNTRY}-latest.osm.pbf"
+    # wget "https://download.geofabrik.de/${CONTINENT}/${COUNTRY}-latest.osm.pbf" -P "$BASEPATH/data/${CONTINENT}/${COUNTRY}"
+
+    # rm -f "$BASEPATH/data/${CONTINENT}/${COUNTRY}/${COUNTRY}.poly"
+    # wget "https://download.geofabrik.de/${CONTINENT}/${COUNTRY}.poly" -P "$BASEPATH/data/${CONTINENT}/${COUNTRY}"
+  
 
     logger "######## End of init required files ...."
 }
@@ -101,7 +104,7 @@ function hgtToPBF {
     logger "######## Convert HGT to PBF ...."
 
     cd $DEM_PBF_FOLDER/$CONTINENT/$COUNTRY
-    pyhgtmap $DEM_FILE/*.hgt --polygon=$BASEPATH/data/${CONTINENT}/${COUNTRY}.poly --step=10 --pbf --simplifyContoursEpsilon=0 --no-zero-contour -j16
+    pyhgtmap $DEM_FILE/*.hgt --polygon=$BASEPATH/data/${CONTINENT}/${COUNTRY}/${COUNTRY}.poly --step=10 --pbf --simplifyContoursEpsilon=0 --no-zero-contour -j16
     cd ../../
 
     logger "######## End of convert HGT to PBF ...."
@@ -120,7 +123,8 @@ function splitDEMToOSM {
     java $JAVAOPTS -jar $SPLITTERJAR $DATA_DEM_PBF \
         --output-dir=$SPLITTER_OUTPUT_DIR/dem_pbf/$CONTINENT/$COUNTRY \
         --keep-complete=false \
-        --polygon-file=$BASEPATH/data/${CONTINENT}/${COUNTRY}.poly \
+        --polygon-file=$BASEPATH/data/${CONTINENT}/${COUNTRY}/${COUNTRY}.poly \
+        --description="GCM_${COUNTRYNAME_SHORT}_Contours_${MAPDATE_CONTOURS}" \
         --mapid=$MAPID_CONTOURS &> $SPLITTER_OUTPUT_DIR/splitter-dem-pbf-$CONTINENT-$COUNTRY.log
 
     logger "######## End of split DEM to OSM ...."
@@ -143,19 +147,24 @@ function generateContours {
         GMAPI=""
     fi
 
+    mkdir -p $MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_contours
+
+    cd $MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_contours
     java $JAVAOPTS -jar $MKGMAPJAR -c $OPTIONS \
         --output-dir=$MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_contours \
         --style-file=$STYLEFILE_CONTOURS \
         --description="GCM_${COUNTRYNAME_SHORT}_Contours_${MAPDATE_CONTOURS}" \
         --area-name="GCM_${COUNTRYNAME_SHORT}_Contours_${MAPDATE_CONTOURS}" \
-        --overview-mapname="GCM_${COUNTRYNAME_SHORT}_Contours_${MAPDATE_CONTOURS}"  \
         --series-name="GCM_${COUNTRYNAME_SHORT}_Contours_${MAPDATE_CONTOURS}" \
-        --family-name="GCM_${COUNTRYNAME_SHORT}_Contours_${MAPDATE}" \
+        --family-name="GCM_${COUNTRYNAME_SHORT}_Contours_${MAPDATE_CONTOURS}" \
         --family-id="$(( $FAMILY_ID+1 ))" \
+        --mapname=$MAPID_CONTOURS  \
         $GMAPI \
-        $DATA_DEM $TYPFILE_CONTOURS &> $MKGMAP_OUTPUT_DIR/mkgmap-$CONTINENT-$COUNTRY-countours.log
+        $TYPFILE_CONTOURS \
+        -c $SPLITTER_OUTPUT_DIR/dem_pbf/$CONTINENT/$COUNTRY/template.args &> $MKGMAP_OUTPUT_DIR/mkgmap-$CONTINENT-$COUNTRY-countours.log
 
     mv $MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_contours/gmapsupp.img $MKGMAP_OUTPUT_DIR/GCM_Contours_${COUNTRYNAME_SHORT}_${MAPDATE_CONTOURS}.img
+    cd $BASEPATH
 
     logger "######## End of the map courbes ...."
 
@@ -166,11 +175,11 @@ function splitCountry {
 
     logger "######## Split country ...."
 
-    java $JAVAOPTS -jar $SPLITTERJAR --precomp-sea=$SEA_DIRECTORY "$BASEPATH/data/${CONTINENT}/${COUNTRY}-latest.osm.pbf" \
+    java $JAVAOPTS -jar $SPLITTERJAR --precomp-sea=$SEA_DIRECTORY "$BASEPATH/data/${CONTINENT}/${COUNTRY}/${COUNTRY}-latest.osm.pbf" \
         --output-dir=$SPLITTER_OUTPUT_DIR/$CONTINENT/$COUNTRY \
         --output=pbf \
-        --description=${COUNTRY} \
-        --polygon-file=$BASEPATH/data/${CONTINENT}/${COUNTRY}.poly \
+        --polygon-file=$BASEPATH/data/${CONTINENT}/${COUNTRY}/${COUNTRY}.poly \
+        --description="GCM_${COUNTRYNAME_SHORT}_${MAPDATE_CONTOURS}" \
         --mapid=$MAPID &> $SPLITTER_OUTPUT_DIR/splitter-$CONTINENT-$COUNTRY.log
 
     logger "######## End of split country ...."
@@ -193,23 +202,28 @@ function generateMap {
         GMAPI=""
     fi
 
+    mkdir -p $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY
+
+    cd $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY
     java $JAVAOPTS -jar $MKGMAPJAR -c $OPTIONS \
-        --style-file=$STYLEFILE \
-        --precomp-sea=$SEA_DIRECTORY \
         --output-dir=$MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY \
-        --bounds=$BOUNDS_DIRECTORY \
+        --style-file=$STYLEFILE \
         --description="GCM_${COUNTRYNAME_SHORT}_${MAPDATE}" \
         --area-name="GCM_${COUNTRYNAME_SHORT}_${MAPDATE}" \
-        --overview-mapname="GCM_${COUNTRYNAME_SHORT}_${MAPDATE}"  \
+        --series-name="GCM_${COUNTRYNAME_SHORT}_${MAPDATE}" \
         --family-name="GCM_${COUNTRYNAME_SHORT}_${MAPDATE}" \
         --family-id="$(( $FAMILY_ID+2 ))" \
-        --series-name="GCM_${COUNTRYNAME_SHORT}_${MAPDATE}" \
-        $GMAPI \
+        --mapname=$MAPID  \
+        --bounds=$BOUNDS_DIRECTORY \
+        --precomp-sea=$SEA_DIRECTORY \
         --dem=$DEM_FILE \
-        --dem-poly=$BASEPATH/data/${CONTINENT}/${COUNTRY}.poly \
-        $DATA $TYPFILE &> $MKGMAP_OUTPUT_DIR/mkgmap-$CONTINENT-$COUNTRY.log
+        --dem-poly=$BASEPATH/data/${CONTINENT}/${COUNTRY}/${COUNTRY}.poly \
+        $GMAPI \
+        $TYPFILE \
+        -c $SPLITTER_OUTPUT_DIR/$CONTINENT/$COUNTRY/template.args &> $MKGMAP_OUTPUT_DIR/mkgmap-$CONTINENT-$COUNTRY.log
     
     mv $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/gmapsupp.img $MKGMAP_OUTPUT_DIR/GCM_Map_${COUNTRYNAME_SHORT}_${MAPDATE}.img
+    cd $BASEPATH
 
     logger "######## End of the map $COUNTRY in continent $CONTINENT... with MAPDATE $MAPDATE ...."
 
@@ -222,7 +236,8 @@ function mergeContoursAndMap {
  
     if [[ "$CONTOURS_ENABLED" = true ]]; then
 
-        for file in $SPLITTER_OUTPUT_DIR/$CONTINENT/$COUNTRY/*.pbf; do
+        #for file in $SPLITTER_OUTPUT_DIR/$CONTINENT/$COUNTRY/*.pbf; do
+        for file in $MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/*.img; do
             DATA="$DATA $file"
         done
 
@@ -234,25 +249,32 @@ function mergeContoursAndMap {
             GMAPI=""
         fi
 
-        CONTOURS="$MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_contours/${MAPID_CONTOURS:0:1}*.img"
+        mkdir -p $MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_merge
+        #CONTOURS="$MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_contours/${MAPID_CONTOURS:0:1}*.img"
+        #CONTOURS="$MKGMAP_OUTPUT_DIR/GCM_Contours_CH_25022025.img"
+        CONTOURS="$MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_contours/*.img"
 
+        cd $MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_merge
         java $JAVAOPTS -jar $MKGMAPJAR -c $OPTIONS \
             --style-file=$STYLEFILE \
             --precomp-sea=$SEA_DIRECTORY \
             --output-dir=$MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_merge \
             --bounds=$BOUNDS_DIRECTORY \
             --description="GCM_Full_${COUNTRYNAME_SHORT}_${MAPDATE}" \
-            --area-name="GCM_Full_${COUNTRYNAME_SHORT}_${MAPDATE}" \
-            --overview-mapname="GCM_Full_${COUNTRYNAME_SHORT}_${MAPDATE}"  \
+            --area-name="${COUNTRYNAME_SHORT}" \
+            --mapname="$(( $MAPID-99 ))"  \
             --family-name="GCM_Full_${COUNTRYNAME_SHORT}_${MAPDATE}" \
-            --family-id="$(( $FAMILY_ID+3 ))" \
+            --family-id="$(( $FAMILY_ID+4 ))" \
             --series-name="GCM_Full_${COUNTRYNAME_SHORT}_${MAPDATE}" \
-            $GMAPI \
             --dem=$DEM_FILE \
-            --dem-poly=$BASEPATH/data/${CONTINENT}/${COUNTRY}.poly \
-            $DATA $TYPFILE $CONTOURS &> $MKGMAP_OUTPUT_DIR/mkgmap-$CONTINENT-$COUNTRY-merge.log
+            --dem-poly=$BASEPATH/data/${CONTINENT}/${COUNTRY}/${COUNTRY}.poly \
+            $GMAPI \
+            $TYPFILE \
+            -c $SPLITTER_OUTPUT_DIR/dem_pbf/$CONTINENT/$COUNTRY/template.args \
+            -c $SPLITTER_OUTPUT_DIR/$CONTINENT/$COUNTRY/template.args &> $MKGMAP_OUTPUT_DIR/mkgmap-$CONTINENT-$COUNTRY-merge.log
         
         mv $MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_merge/gmapsupp.img $MKGMAP_OUTPUT_DIR/GCM_Full_${COUNTRYNAME_SHORT}_${MAPDATE}.img
+        cd $BASEPATH
 
         logger "######## End of merge map $COUNTRY in continent $CONTINENT... with MAPDATE $MAPDATE ...."
     fi
@@ -278,6 +300,11 @@ function cleanUp {
 
 #-----------------------------
 
+# if [[ ! -z "$COUNTRY_SUBZONE" ]]; then # if subzone is set
+#     COUNTRY+="/$COUNTRY_SUBZONE"
+#     logger "COUNTRY is $COUNTRY"
+# fi
+
 init
 
 FAMILY_ID=$(( 53000+${id[$CONTINENT]}*100 ))
@@ -290,8 +317,8 @@ logger "MAPID_CONTOURS is $MAPID_CONTOURS"
 
 # Do only 1x or if you change for a new country !
 # hgtToPBF
-# splitDEMToOSM
-# generateContours
+#splitDEMToOSM
+generateContours
 
 # Do every time
 splitCountry

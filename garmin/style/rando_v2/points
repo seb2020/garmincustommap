@@ -1,0 +1,78 @@
+place=city & population>200000 {name "${name:fr}" | "${name}"} [0x0100 resolution 17]
+place=city {name "${name:fr}" | "${name}"} [0x0200 resolution 18]
+place=town {name "${name:fr}" | "${name}"} [0x0200 resolution 19]
+place=village {name "${name:fr}" | "${name}"} [0x0300 resolution 20]
+place=hamlet {name "${name:fr}" | "${name}"} [0x0400 resolution 21]
+
+natural=peak & ele>=4000 {name "${name:fr} (${ele})" | "${name} (${ele})"} [0x6616 resolution 18]
+natural=peak & ele>=3000 {name "${name:fr} (${ele})" | "${name} (${ele})"} [0x6616 resolution 19]
+natural=peak {name "${name:fr} (${ele})" | "${name} (${ele})"} [0x6616 resolution 20]
+
+natural=saddle {name "${name:fr} (${ele})" | "${name} (${ele})"} [0x0600 resolution 24]
+
+mountain_pass=yes {name "${name:fr} (${ele})" | "${name} (${ele})"} [0x0700 resolution 23]
+
+building=church | building=cathedral [0x02c0b resolution 23]
+
+amenity=drinking_water [0x06414 resolution 24]
+
+man_made=water_tap & (drinking_water=yes | drinking_water=conditional) [0x06414 resolution 24]
+
+amenity=parking & (access ~ '(yes|customers|permissive)' | access!=*) & (parking=surface | parking!=*) [0x02f0b resolution 23]
+
+amenity=toilets & (fee=no | fee!=*) [0x11516 resolution 24]
+
+natural=spring [0x6511 resolution 24]
+
+tourism=picnic_site [0x11517 resolution 24]
+
+sport=climbing & (outdoor=yes | outdoor!=*) [0x11515 resolution 23] 
+
+tourism=viewpoint [0x05200 resolution 24] 
+
+natural=cave_entrance {name "${name:fr}" | "${name}"} [0x06602 resolution 24]
+
+amenity=shelter & (shelter_type=basic_hut) [0x11519 resolution 22]
+
+tourism=wilderness_hut {name "${name:fr}" | "${name}"} [0x0900 resolution 22]
+
+natural=water & name=* {name "${name:fr}" | "${name}"} [0x0a00 resolution 22] 
+
+natural=glacier & name=* {name "${name:fr}" | "${name}"} [0x0a00 resolution 22] 
+
+# Custom
+
+healthcare=hospital | amenity=hospital [0x3002 resolution 22]
+healthcare=* | amenity=dentist | amenity=doctors [0x3002 resolution 24]
+
+amenity=shelter {name "${name:fr} (${ele})" | "${name} (${ele})"} [0x2b06 resolution 23]
+
+tourism=information [0x4c00 resolution 24]
+
+sport=9pin [0x2d07 resolution 24]
+sport=10pin [0x2d07 resolution 24]
+sport=airport [0x2d0b resolution 24]
+sport=multi [0x2d0a resolution 24]
+sport=skating [0x2d08 resolution 24]
+sport=skiing [0x2d06 resolution 24]
+sport=swimming & access!=private [0x2d09 resolution 24]
+
+highway=bus_stop [0x2f17 resolution 24]
+
+leisure=common & name=* [0x2c06 resolution 24]
+leisure=garden & name=* [0x2c06 resolution 24]
+leisure=golf_course [0x2d05 resolution 24]
+leisure=ice_rink [0x2d08 resolution 24]
+leisure=marina [0x4300 resolution 24]
+leisure=nature_reserve & name=* [0x6612 resolution 24]
+leisure=park [0x2c06 resolution 24]
+leisure=pitch { name '${name} (${sport})' | '${name}' } [0x2c08 resolution 24]
+leisure=playground [0x2c06 resolution 24]
+leisure=recreation_ground [0x2c08 resolution 24]
+leisure=sports_center | leisure=sports_centre { name '${name} (${sport})' | '${name}' } [0x2d0a resolution 24]
+leisure=stadium { name '${name} (${sport})' | '${name}' } [0x2c08 resolution 24]
+leisure=track { name '${name} (${sport})' | '${name}' } [0x2c08 resolution 24]
+leisure=water_park [0x2b04 resolution 24]
+
+shop=bakers [0x2a0d resolution 24]
+shop=bakery [0x2a0d resolution 24]

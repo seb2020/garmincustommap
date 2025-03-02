@@ -4,10 +4,16 @@ Update of various existing scripts for creating a map for your Garmin watch from
 
 Currently in testing phase and work fine for Switzerland
 
-- Split DEM to OSM : ~10m
-- Create map countours : ~5m
-- Slit country : ~2m
-- Generate map : ~4m
+|                     | Switzerland  | France |   |   |
+|---------------------|--------------|--------|---|---|
+| hgtToPBF            |              |        |   |   |
+| splitDEMToOSM       | ~2m          |        |   |   |
+| generateContours    | ~2m          |        |   |   |
+| splitCountry        | ~2m          |        |   |   |
+| generateMap         | ~5m          |        |   |   |
+| mergeContoursAndMap | ~8m          |        |   |   |
+|                     |              |        |   |   |
+
 
 ## Prerequisites
 
