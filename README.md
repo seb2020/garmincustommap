@@ -14,19 +14,16 @@ Currently in testing phase and work fine for Switzerland
 | mergeContoursAndMap | ~8m          |        |   |   |
 |                     |              |        |   |   |
 
-
 ## Prerequisites
 
 Download in `garmin/hgt` the file from your country (download <https://sonny.4lima.de/>). The folder must contains files in `hgt` extension.
-
 
 ## Scripts
 
 All-in-one :
 
 ```bash
-cd garmin
-./generate_map.sh
+./garmin/generate_map.sh "europe" "switzerland" "CH" "" 51000
 ```
 
 If you enable `GMAPI_ENABLED`, you will have a map for Garmin Basecamp. You can copy `$MKGMAP_OUTPUT_DIR/$CONTINENT/$COUNTRY/GCM_XX_XXX_XXX.gmap` to `C:\ProgramData\Garmin\Maps`.
@@ -61,7 +58,8 @@ pyhgtmap ../../data/hgt/*.hgt --polygon=../../data/europe/switzerland.poly --ste
 #### Old way with EXE
 
 Convert HGT file to OSM with https://github.com/FSofTlpz/Hgt2Osm2
-```shell
+
+```bash
 hgt2osm.exe --HgtPath=. --WriteElevationType=false --FakeDistance=-0.5 --MinVerticePoints=3 --MinBoundingbox=0.00016 --DouglasPeucker=0.05 --MinorDistance=10 --OutputOverwrite=true
 ```
 

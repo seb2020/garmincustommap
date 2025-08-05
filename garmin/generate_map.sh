@@ -22,13 +22,16 @@ DEM_FILE="$BASEPATH/data/hgt"
 DEM_PBF_FOLDER="$BASEPATH/data/dem-pbf"
 MAPDATE="$(date +'%d%m%Y_%H%M%S')"
 MAPDATE_CONTOURS="$(date +'%d%m%Y')"
-CONTINENT="europe"
-COUNTRY="switzerland"
-COUNTRY_SUBZONE="franche-comte"
-COUNTRYNAME_SHORT="CH"
 GMAPI_ENABLED=true # Enable if you want to create map for Gamin BaseCamp
 CONTOURS_ENABLED=true # Enable if you want to merge the contour and the map in a single file
 GMAPI_CONTOURS_ENABLED=true # Enable if you want to create map for Gamin BaseCamp for the countour map
+
+# Arguments from CLI
+CONTINENT=$1
+SEEDMAP=$5 # adjust to your system, this is the base ID for the map. Each map must have a unique ID.
+COUNTRY=$2
+COUNTRY_SUBZONE=$4
+COUNTRYNAME_SHORT=$3
 
 #STYLE OpenTopoMap
 # STYLEFILE="$BASEPATH/style/opentopomap/"
@@ -89,14 +92,12 @@ function init {
     fi
     SEA_DIRECTORY="$BASEPATH/data/sea"
 
+    rm -f "$BASEPATH/data/${CONTINENT}/${COUNTRY}/${COUNTRY}-latest.osm.pbf"
+    wget "https://download.geofabrik.de/${CONTINENT}/${COUNTRY}-latest.osm.pbf" -P "$BASEPATH/data/${CONTINENT}/${COUNTRY}"
 
-    # rm -f "$BASEPATH/data/${CONTINENT}/${COUNTRY}/${COUNTRY}-latest.osm.pbf"
-    # wget "https://download.geofabrik.de/${CONTINENT}/${COUNTRY}-latest.osm.pbf" -P "$BASEPATH/data/${CONTINENT}/${COUNTRY}"
-
-    # rm -f "$BASEPATH/data/${CONTINENT}/${COUNTRY}/${COUNTRY}.poly"
-    # wget "https://download.geofabrik.de/${CONTINENT}/${COUNTRY}.poly" -P "$BASEPATH/data/${CONTINENT}/${COUNTRY}"
+    rm -f "$BASEPATH/data/${CONTINENT}/${COUNTRY}/${COUNTRY}.poly"
+    wget "https://download.geofabrik.de/${CONTINENT}/${COUNTRY}.poly" -P "$BASEPATH/data/${CONTINENT}/${COUNTRY}"
   
-
     logger "######## End of init required files ...."
 }
 function hgtToPBF {
@@ -250,8 +251,7 @@ function mergeContoursAndMap {
         fi
 
         mkdir -p $MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_merge
-        #CONTOURS="$MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_contours/${MAPID_CONTOURS:0:1}*.img"
-        #CONTOURS="$MKGMAP_OUTPUT_DIR/GCM_Contours_CH_25022025.img"
+
         CONTOURS="$MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_contours/*.img"
 
         cd $MKGMAP_OUTPUT_DIR/$CONTINENT/${COUNTRY}_merge
@@ -305,9 +305,16 @@ function cleanUp {
 #     logger "COUNTRY is $COUNTRY"
 # fi
 
+
+# Check if all needed arguments are provided
+if [ "$#" -ne 5 ]; then
+    echo "Usage: $0 <continent> <country> <countryname_short> <country_subzone> <mapid>"
+    exit 1
+fi
+
 init
 
-FAMILY_ID=$(( 53000+${id[$CONTINENT]}*100 ))
+FAMILY_ID=$(( $SEEDMAP+${id[$CONTINENT]}*100 ))
 MAPID=$(( $FAMILY_ID*1000+2 ))
 MAPID_CONTOURS=$(( $MAPID+5000 ))
 
@@ -318,10 +325,11 @@ logger "MAPID_CONTOURS is $MAPID_CONTOURS"
 # Do only 1x or if you change for a new country !
 # hgtToPBF
 # splitDEMToOSM
-# generateContours
 
 # Do every time
+generateContours
 splitCountry
 generateMap
 mergeContoursAndMap
+
 # cleanUp
